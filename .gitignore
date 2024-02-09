@@ -1,2 +1,5 @@
-.vscode/
-target/
+*
+!src/
+!.gitignore
+!pom.xml
+!README
