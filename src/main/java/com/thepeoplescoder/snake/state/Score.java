@@ -33,8 +33,7 @@ public class Score implements IoEngine.Drawable
      */
     public Score plus(int points)
     {
-        long newPoints = this.points + points;
-        return newPoints == this.points ? this : new Score(newPoints);
+        return points == 0 ? this : new Score(this.points + points);
     }
     
     @Override

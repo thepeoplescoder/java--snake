@@ -10,6 +10,12 @@ public class Shared
 {
     public static final Random random = new Random();
 
+    public static class System
+    {
+        public static final boolean isRunningLinux =
+            java.lang.System.getProperty("os.name").toLowerCase().equals("linux");
+    }
+
     public static class Settings
     {
         public static class Game

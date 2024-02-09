@@ -14,7 +14,7 @@ import com.thepeoplescoder.snake.state.Score;
  * representation of the {@link GameState} to the player, and
  * handling the input from the user.<p>
  * 
- * Theoretically, I/O engines should be pluggable,
+ * Ideally, I/O engines should be pluggable,
  * i.e. the game should run the same (but look different) with
  * an I/O engine used for displaying the game on a terminal,
  * or with an I/O engine used for displaying the game on a GUI
@@ -35,8 +35,7 @@ public abstract class IoEngine
     private final GameView gameView;
     
     /**
-     * 
-     * @param gs
+     * @param gv The {@link GameView} associated with this {@link IoEngine}.
      */
     protected IoEngine(GameView gv)
     {
@@ -44,21 +43,23 @@ public abstract class IoEngine
     }
     
     /**
-     * @return
+     * @return The {@link GameView} associated with this {@link IoEngine}.
      */
     public GameView getGameView()
     {
         return gameView;
     }
-    
+
+    /**
+     * @return The current {@link GameState}.
+     */
     public GameState getGameState()
     {
         return getGameView().getGameState();
     }
     
     /**
-     * 
-     * @return
+     * @return The current {@link GameBoard}.
      */
     public GameBoard getGameBoard()
     {
@@ -66,9 +67,9 @@ public abstract class IoEngine
     }
     
     /**
-     * 
-     * @param color
-     * @return
+     * Sets the current drawing color for this {@link IoEngine}.
+     * @param color The new drawing color to use.
+     * @return This {@link IoEngine}.
      */
     public abstract IoEngine setColor(Color color);
     
@@ -80,11 +81,14 @@ public abstract class IoEngine
     public abstract void drawCellAt(IntVector2 position);
     
     /**
-     * 
-     * @param score
+     * Draws the score to the display.
+     * @param score The {@link Score} to display.
      */
     public abstract void drawScore(Score score);
-    
+
+    /**
+     * Draws the game over screen.
+     */
     public abstract void drawGameOver();
     
     /**
@@ -95,6 +99,9 @@ public abstract class IoEngine
     {
         d.draw(this);
     }
-    
-    public abstract void drawGrid();
+
+    /**
+     * Draws a grid (optional operation).
+     */
+    public void drawGrid() {}
 }

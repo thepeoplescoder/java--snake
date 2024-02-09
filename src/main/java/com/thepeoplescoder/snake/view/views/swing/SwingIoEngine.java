@@ -42,42 +42,77 @@ public class SwingIoEngine extends IoEngine
     public static final int CELL_HEIGHT = Shared.Settings.View.Swing.cellHeight;
     public static final int SCORE_HEIGHT = Shared.Settings.View.Swing.scoreHeight;
 
+    /**
+     * @param view The {@link SwingView} associated with this {@link SwingIoEngine}.
+     */
     public SwingIoEngine(SwingView view)
     {
         super(view);
     }
 
+    /**
+     * @return The current {@link GameView}.
+     */
+    @Override
     public SwingView getGameView()
     {
         return (SwingView)super.getGameView();
     }
 
+    /**
+     * @return The current graphics context.
+     */
     public Graphics getGraphics()
     {
         return getGameView().getGraphics();
     }
 
+    /**
+     * Sets the current drawing color.
+     * @param color The new drawing color to use.
+     * @return This {@link SwingIoEngine}.
+     */
     public SwingIoEngine setColor(Color color)
     {
         getGraphics().setColor(color);
         return this;
     }
 
+    /**
+     * Converts the given cell X coordinate to its window pixel coordinate.
+     * @param cellX The cell coordinate.
+     * @return The window pixel coordinate.
+     */
     private static int cellXToPixelX(int cellX)
     {
         return cellX * CELL_TO_PIXEL_SCALE;
     }
 
+    /**
+     * Converts the given cell Y coordinate to its window pixel coordinate.
+     * @param cellY The cell coordinate.
+     * @return The window pixel coordinate.
+     */
     private static int cellYToPixelY(int cellY)
     {
         return SCORE_HEIGHT + (cellY * CELL_TO_PIXEL_SCALE);
     }
 
+    /**
+     * Sets the given cell in {@link com.thepeoplescoder.snake.state.GameBoard} coordinates to the current color.
+     * @param pos The position at which to draw the cell.
+     */
+    @Override
     public void drawCellAt(IntVector2 pos)
     {
         getGraphics().fillRect(cellXToPixelX(pos.getX()), cellYToPixelY(pos.getY()), CELL_WIDTH, CELL_HEIGHT);
     }
 
+    /**
+     * Draws the score to the display.
+     * @param score The {@link Score} to display.
+     */
+    @Override
     public void drawScore(Score score)
     {
         Graphics g = getGraphics();
@@ -90,25 +125,42 @@ public class SwingIoEngine extends IoEngine
         g.drawString(score.toString(), fm.stringWidth("Score: "), 20);
     }
 
+    /**
+     * Draws the game over screen.
+     */
+    @Override
     public void drawGameOver()
     {
-        final int bigGameOverY = getGameView().getPixelDimensions().height / 2;
         Graphics g = getGraphics();
+
         g.setFont(Shared.Fonts.LazyLoaded.gameOver.toFont());
         g.setColor(Shared.Colors.gameOverColor);
-        drawStringAtCenter(g, Shared.Messages.gameOver,
-            bigGameOverY);
+
+        final int bigGameOverY = getGameView().getPixelDimensions().height / 2;
+        drawStringAtCenter(g, Shared.Messages.gameOver, bigGameOverY);
+
         g.setFont(Shared.Fonts.LazyLoaded.littleGameOver.toFont());
         g.setColor(Shared.Colors.littleGameOverColor);
-        drawStringAtCenter(g, getGameState().getLittleGameOverMessage(),
-            bigGameOverY + g.getFontMetrics().getHeight());
+
+        final int littleGameOverY = bigGameOverY + g.getFontMetrics().getHeight();
+        drawStringAtCenter(g, getGameState().getLittleGameOverMessage(), littleGameOverY);
     }
 
-    public void drawStringAtCenter(Graphics g, String s, int y)
+    /**
+     * Draws a string at the center of the display.
+     * @param g Graphics context of the display.
+     * @param s The string to draw.
+     * @param y The y-coordinate of the string.
+     */
+    private void drawStringAtCenter(Graphics g, String s, int y)
     {
         g.drawString(s, (getGameView().getPixelDimensions().width - g.getFontMetrics().stringWidth(s)) / 2, y);
     }
 
+    /**
+     * Draws the grid.
+     */
+    @Override
     public void drawGrid()
     {
         if (SwingIoEngine.gridColor == null) { return; }
@@ -125,7 +177,12 @@ public class SwingIoEngine extends IoEngine
             .forEach(y -> g.drawLine(0, y, pixel.width, y));
     }
 
-    public static final KeyListener newKeyListener(GameView v)
+    /**
+     * Creates a {@link KeyListener} to handle input events. (Swing exclusive)
+     * @param v The {@link SwingView} keeping track of the current game state.
+     * @return A {@link KeyListener} to be used for handling input events.
+     */
+    public static final KeyListener newKeyListener(SwingView v)
     {
         Map<Integer, GameInputEvent> handlers = new HashMap<>();
 

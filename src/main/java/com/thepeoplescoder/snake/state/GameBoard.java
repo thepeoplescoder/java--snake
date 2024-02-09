@@ -30,7 +30,7 @@ import com.thepeoplescoder.snake.view.IoEngine;
 public class GameBoard implements IoEngine.Drawable
 {
     /** The random number generator for all {@link GameBoard}s.*/
-    private static final Random random = GameState.random;
+    private static final Random random = Shared.random;
 
     /** A map of all nonempty {@link Cell}s. */
     private final Map<IntVector2, Cell> cells = new HashMap<>();
@@ -218,38 +218,24 @@ public class GameBoard implements IoEngine.Drawable
         final Supplier<IntVector2> nextTail =
             () -> Stream.generate(this::getRandomVector).filter(this::isEmptyCell).findFirst().get();
 
-        // Converts a snake tail to a Stream of potential baby bodies.
-        // In this context, a baby body is defined as a List<IntVector2>
-        // whose first element is the head position, and whose second element is the tail position.
-        final Function<IntVector2, Stream<List<IntVector2>>> tailToPotentialBabyBodies =
-            tail -> IntVector2.DIRECTIONS.stream().map(direction -> {
-                final IntVector2 head = tail.plus(direction);
-                return Arrays.asList(head, tail);
-            });
-
-        // Converts a baby body (a two-element List<IntVector2> of positions) to a baby Snake object.
-        final Function<List<IntVector2>, Snake> babyBodyToBabySnake =
-            body -> {
-                final IntVector2 head = body.get(0);
-                final IntVector2 tail = body.get(1);
-                final IntVector2 direction = head.minus(tail);
-                return Snake.baby(direction, head, tail);
-            };
+        // Converts a snake tail to a stream of snakes facing in all four possible directions.
+        final Function<IntVector2, Stream<Snake>> tailToPotentialBabySnakes =
+            tail -> IntVector2.DIRECTIONS.stream().map(direction -> Snake.baby(direction, tail.plus(direction), tail));
 
         // Used to generate a list of states for a snake.
         // These state list consist of elements where element 0 is the initial position of the snake,
         // element 1 is the state after moving the snake forward by one, element 2 is the state after moving
         // the snake forward by two, and so on.
         final Supplier<Collection<List<GameState>>> nextCollectionOfCardinalDirectionStateLists =
-            () -> tailToPotentialBabyBodies.apply(nextTail.get()).map(babyBodyToBabySnake)
+            () -> tailToPotentialBabySnakes.apply(nextTail.get())
                 .map( snake      -> snake.moves(Shared.Settings.Game.initialSafetySpaces) )
-                .map( snakeMoves -> GameState.stateListFrom(this, snakeMoves)   )
+                .map( snakeMoves -> GameState.stateListFrom(this, snakeMoves)             )
                 .collect(Collectors.toList());
 
         // A state list is good if the moved snake in any state doesn't result in a game over.
         final Predicate<List<GameState>> isGoodStateList = sl -> !sl.stream().anyMatch(GameState::isGameOver);
         final Predicate<Collection<List<GameState>>> hasGoodStateList =
-            listOfStateLists -> listOfStateLists.stream().anyMatch(isGoodStateList);
+            collectionOfStateLists -> collectionOfStateLists.stream().anyMatch(isGoodStateList);
 
         // Now we have enough information to choose a snake that won't immediately cause a game over.
         List<Snake> possibleSnakes = Stream.generate(nextCollectionOfCardinalDirectionStateLists)
@@ -257,8 +243,7 @@ public class GameBoard implements IoEngine.Drawable
             .findFirst()
             .get().stream()
             .filter(isGoodStateList)
-            .map(stateList -> stateList.get(0))
-            .map(state -> state.getSnake())
+            .map(stateList -> stateList.get(0).getSnake())
             .collect(Collectors.toList());
 
         // Pick a random one out of the bunch.

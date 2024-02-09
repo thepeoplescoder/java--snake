@@ -80,7 +80,7 @@ public class Apple extends Cell
             _gs.getBoard().put(Apple.with()
                     .positionAs(_gs.getRandomEmptyCell())
                     .pointsAs(getPoints())
-                    .growthAs(getGrowthAmount())
+                    .growthAmountAs(getGrowthAmount())
                 .make());
             return GameState.from(_gs)
                     .scoreAs(score -> score.plus(getPoints()))
@@ -149,6 +149,6 @@ public class Apple extends Cell
          *                     as a result of eating this {@link Apple}.
          * @return This {@link Builder}.
          */
-        public Builder growthAs(int growthAmount) { this.growthAmount = growthAmount; return this; }
+        public Builder growthAmountAs(int growthAmount) { this.growthAmount = growthAmount; return this; }
     }
 }

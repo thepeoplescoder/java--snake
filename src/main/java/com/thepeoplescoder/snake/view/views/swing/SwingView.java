@@ -28,10 +28,8 @@ public class SwingView extends GameView
     }
     
     private final Dimension pixelDimensions = getGameState().getBoard().getSize().times(CELL_TO_PIXEL_SCALE)
-        .plus(0, SCORE_HEIGHT)
+        .plus(0, SwingIoEngine.SCORE_HEIGHT)
         .toDimension();
-
-    private static final int SCORE_HEIGHT = SwingIoEngine.SCORE_HEIGHT;
 
     public Dimension getPixelDimensions()
     {
@@ -84,7 +82,7 @@ public class SwingView extends GameView
      * The JFrame containing the game display.
      */
     @SuppressWarnings("serial")
-    public class GameFrame extends JFrame
+    private class GameFrame extends JFrame
     {
         public GameFrame()
         {
@@ -97,45 +95,43 @@ public class SwingView extends GameView
             this.setVisible(true);
         }
     }
-    
+
     /**
      * The JPanel of the game display.
      */
     @SuppressWarnings("serial")
-    public class GamePanel extends JPanel
+    private class GamePanel extends JPanel
     {
-        //private final Timer gameTimer;
-
         public GamePanel()
         {
-            this.setPreferredSize(pixelDimensions);
+            this.setPreferredSize(getPixelDimensions());
             this.setBackground(Shared.Colors.background);
             this.setFocusable(true);
 
             this.addKeyListener(SwingIoEngine.newKeyListener(SwingView.this));
 
-            final Runnable repainter = System.getProperty("os.name").toLowerCase().equals("linux") ? () -> {
+            final Runnable repainter = Shared.System.isRunningLinux ? () -> {
                 repaint();
                 Toolkit.getDefaultToolkit().sync();
             } : this::repaint;
 
-            final Timer gameTimer = new Timer(Shared.Settings.Game.delayMillis, null);
-            final Runnable terminateIfDone = () -> {
+            gameLoop(repainter).start();
+        }
+
+        private Timer gameLoop(Runnable repainter)
+        {
+            final Timer t = new Timer(Shared.Settings.Game.delayMillis, null);
+            t.addActionListener(e -> {
                 if (getGameState().isDone())
                 {
-                    gameTimer.stop();
+                    t.stop();
                     System.exit(0);
                 }
-            };
-
-            // This is essentially our game loop.
-            gameTimer.addActionListener(e -> {
-                terminateIfDone.run();
                 setGameState(getGameState().nextState());
                 repainter.run();
             });
-            repainter.run();        // paint initial state
-            gameTimer.start();
+            repainter.run();
+            return t;
         }
 
         public void paintComponent(Graphics g)

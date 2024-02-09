@@ -44,7 +44,7 @@ public class GameState implements IoEngine.Drawable
     /**
      * The random number generator for our game.
      */
-    public static final Random random = new Random();
+    public static final Random random = Shared.random;
 
     /** The game board for the current state. */
     private final GameBoard board;
@@ -147,7 +147,7 @@ public class GameState implements IoEngine.Drawable
         return GameState.startWith(size, walls).call(_gs -> {
             _gs.getBoard().put(Apple.with().positionAs(_gs.getRandomEmptyCell())
                 .pointsAs(100)
-                .growthAs(Shared.Settings.Game.growthStepsPerApple)
+                .growthAmountAs(Shared.Settings.Game.growthStepsPerApple)
                 .make());
         });
     }
@@ -169,7 +169,8 @@ public class GameState implements IoEngine.Drawable
     public IntVector2 getRandomEmptyCell()
     {
         return Stream.generate(getBoard()::getRandomVector)
-            .filter(pos -> getBoard().getCell(pos) == Cell.EMPTY && !getSnake().contains(pos)).findFirst().get();
+            .filter(pos -> getBoard().getCell(pos) == Cell.EMPTY && !getSnake().contains(pos))
+            .findFirst().get();
     }
     
     /**
@@ -391,15 +392,22 @@ public class GameState implements IoEngine.Drawable
      */
     public GameState queueGameEvent(Function<? super GameState, ? extends GameState> event)
     {
-        Function<? super GameState, ? extends GameState> onlyHandleEventIfTheGameIsNotInATerminalState =
-            gs -> gs.isTerminalState() ? gs : event.apply(gs);
-        gameEventQueue.add(onlyHandleEventIfTheGameIsNotInATerminalState);
+        Function<? super GameState, ? extends GameState>
+            onlyHandleTheEventIfTheGameIsNotInATerminalState =
+                gs -> gs.isTerminalState() ? gs : event.apply(gs);
+        gameEventQueue.add(onlyHandleTheEventIfTheGameIsNotInATerminalState);
         return this;
     }
-    
+
+    /**
+     * @return A {@link GameState.Builder} object.
+     */
     public static GameState.Builder with()             { return new GameState.Builder();   }
     public static GameState.Builder from(GameState gs) { return new GameState.Builder(gs); }
 
+    /**
+     * Used for creating new {@link GameState}s.
+     */
     public static class Builder
     {
         /** The game board for the current state. */
@@ -487,6 +495,9 @@ public class GameState implements IoEngine.Drawable
         public Builder aNewScore()    { return scoreAs(new Score());   }
         public Builder togglePaused() { return pausedAs(p -> !p); }
 
+        /**
+         * @return A new {@link GameState} from this {@link Builder}.
+         */
         public GameState make() { return new GameState(this); }
     }
 }

@@ -86,20 +86,20 @@ public class Snake implements IoEngine.Drawable, GameState.Movable
      */
     public Snake move()
     {
-        Stream<IntVector2> newTailStream = tail.stream().limit(tail.size() - (growthStepsRemaining > 0 ? 0 : 1));
-        newTailStream = Stream.concat(Stream.of(head), newTailStream);
-
-        LinkedHashSet<IntVector2> newTail = newTailStream.collect(toCollection(LinkedHashSet::new));
-        IntVector2 newHead                = getHead().plus(direction);
+        final int tailSegmentsToRemove              = growthStepsRemaining > 0 ? 0 : 1;
+        final Stream<IntVector2> endOfNewTailStream = tail.stream().limit(tail.size() - tailSegmentsToRemove);
+        final Stream<IntVector2> newTailStream      = Stream.concat(Stream.of(head), endOfNewTailStream);
+        final LinkedHashSet<IntVector2> newTail     = newTailStream.collect(toCollection(LinkedHashSet::new));
+        final IntVector2 newHead                    = getHead().plus(direction);
 
         return new Snake(direction, newHead, newTail, Math.max(growthStepsRemaining - 1, 0));
     }
-    
+
     public Snake move(int n)
     {
-        return moves(n).skip(n).findFirst().get();
+        return moves(n).skip(n - 1).findFirst().get();
     }
-    
+
     public Stream<Snake> moves(int n)
     {
         return n < 1 ? Stream.of(this) : Stream.iterate(this, Snake::move).limit(n + 1);
