@@ -95,11 +95,24 @@ public class Snake implements IoEngine.Drawable, GameState.Movable
         return new Snake(direction, newHead, newTail, Math.max(growthStepsRemaining - 1, 0));
     }
 
+    /**
+     * Moves the snake forward n cells.
+     * @param n The number of cells forward that the snake should move.
+     * @return A new {@link Snake} that has moved forward n cells.
+     */
     public Snake move(int n)
     {
-        return moves(n).skip(n - 1).findFirst().get();
+        return moves(n).skip(n).findFirst().get();
     }
 
+    /**
+     * Gets a {@link Stream} of {@link Snake}s in all states of forward movement.
+     * @param n The number of spaces to move forward.
+     * @return A {@link Stream} of movement states.  The first element of the stream will
+     *         be the {@link Snake} in its current state, the next element is the snake
+     *         after moving forward 1 cell, then after moving forward 2 cells, up to n
+     *         cells total.  The stream will contain {@code Math.max(n + 1, 1)} elements.
+     */
     public Stream<Snake> moves(int n)
     {
         return n < 1 ? Stream.of(this) : Stream.iterate(this, Snake::move).limit(n + 1);
@@ -117,7 +130,17 @@ public class Snake implements IoEngine.Drawable, GameState.Movable
     {
         return isValidDirection(direction) ? new Snake(direction, head, tail, growthStepsRemaining) : this;
     }
-    
+
+    /**
+     * Checks to see if changing the {@link Snake}'s direction to the given direction makes sense.
+     * @param newDirection The direction to check.
+     * @return {@code true} if changing the direction to {@code newDirection} makes sense, {@code false} otherwise.
+     */
+    public boolean isValidDirection(IntVector2 newDirection)
+    {
+        return getDirection().isPerpendicularTo(newDirection);
+    }
+
     /**
      * @param numSteps The number of growth steps that the {@link Snake} must endure.
      * @return A new {@link Snake} instance who will be directed to grow the given number of steps/segments.
@@ -137,16 +160,6 @@ public class Snake implements IoEngine.Drawable, GameState.Movable
         return head.equals(position) || tail.contains(position);
     }
 
-    /**
-     * Checks to see if changing the {@link Snake}'s direction to the given direction makes sense.
-     * @param newDirection The direction to check.
-     * @return {@code true} if changing the direction to {@code newDirection} makes sense, {@code false} otherwise.
-     */
-    public boolean isValidDirection(IntVector2 newDirection)
-    {
-        return getDirection().isPerpendicularTo(newDirection);
-    }
-    
     /**
      * Did the {@link Snake} crash into itself?
      * @return {@code true} if it did, otherwise {@code false}.

@@ -75,18 +75,21 @@ public class Apple extends Cell
     @Override
     public GameState onTouch(GameState gs)
     {
-        return gs.queueGameEvent(_gs -> {
+        gs.queueGameEvent(_gs -> {
             _gs.getBoard().removeCell(getPosition());
-            _gs.getBoard().put(Apple.with()
+            _gs.getBoard().putCell(Apple.with()
                     .positionAs(_gs.getRandomEmptyCell())
                     .pointsAs(getPoints())
                     .growthAmountAs(getGrowthAmount())
                 .make());
+
             return GameState.from(_gs)
                     .scoreAs(score -> score.plus(getPoints()))
                     .snakeAs(snake -> snake.growBy(getGrowthAmount()))
+                    .applesRemainingAs(applesRemaining -> applesRemaining - 1)
                 .make();
         });
+        return gs;
     }
 
     /**

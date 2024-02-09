@@ -9,6 +9,8 @@ import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.IntFunction;
+import java.util.function.IntUnaryOperator;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -52,16 +54,23 @@ public class GameState implements IoEngine.Drawable
     private final Snake snake;
     /** The score for the current state. */
     private final Score score;
-    /** The input queue for the entire game.  It gets passed from state to state. */
-    private final Queue<GameInputEvent> inputQueue;
-    /** The queue for other game events that modify mutable state. It gets passed from state to state.*/
-    private final Queue<Function<? super GameState, ? extends GameState>> gameEventQueue;
+    /** The level for the currnet state. */
+    private final int level;
+    /** The number of apples remaining to reach the next level. */
+    private final int applesRemaining;
+
     /** This is {@code true} if the game loop should end, and the application should terminate. */
     private final boolean done;
     /** This is {@code true} if the game is paused, otherwise it is {@code false} */
     private final boolean paused;
+
     /** The little game over message. */
     private final String littleGameOverMessage;
+
+    /** The input queue for the entire game.  It gets passed from state to state. */
+    private final Queue<GameInputEvent> inputQueue;
+    /** The queue for other game events that modify mutable state. It gets passed from state to state.*/
+    private final Queue<Function<? super GameState, ? extends GameState>> gameEventQueue;
 
     /**
      * General constructor for a {@code GameState}.
@@ -87,6 +96,8 @@ public class GameState implements IoEngine.Drawable
         this.board                 = Objects.requireNonNull(gsb.board, "board cannot be null.");
         this.snake                 = Objects.requireNonNull(gsb.snake, "snake cannot be null.");
         this.score                 = Objects.requireNonNull(gsb.score, "score cannot be null.");
+        this.level                 = gsb.level;
+        this.applesRemaining       = gsb.applesRemaining;
         this.inputQueue            = gsb.inputQueue;
         this.gameEventQueue        = gsb.gameEventQueue;
         this.littleGameOverMessage = gsb.littleGameOverMessage;
@@ -145,7 +156,7 @@ public class GameState implements IoEngine.Drawable
         placePlusOnBoard.accept(center.plus(10, 10), 5);
 
         return GameState.startWith(size, walls).call(_gs -> {
-            _gs.getBoard().put(Apple.with().positionAs(_gs.getRandomEmptyCell())
+            _gs.getBoard().putCell(Apple.with().positionAs(_gs.getRandomEmptyCell())
                 .pointsAs(100)
                 .growthAmountAs(Shared.Settings.Game.growthStepsPerApple)
                 .make());
@@ -195,6 +206,16 @@ public class GameState implements IoEngine.Drawable
     public Score getScore()
     {
         return score;
+    }
+
+    public int getLevel()
+    {
+        return level;
+    }
+
+    public int getApplesRemaining()
+    {
+        return applesRemaining;
     }
     
     /**
@@ -313,16 +334,43 @@ public class GameState implements IoEngine.Drawable
         GameState result = getNewStateFromSnakeTouchingCurrentCell();
 
         // Process the current game event queue in its entirety.
-        result = gameEventQueue.stream().reduce((f1, f2) -> f1.andThen(f2)).orElse(x -> x).apply(result);
-        gameEventQueue.clear();
+        result = processEntireCurrentGameEventQueueOn(result);
 
-        // Process *at most* ONE input event.
-        result = inputQueue.isEmpty() ? result : inputQueue.remove().applyHandler(result);
-
-        // Move the snake.
-        return result.withSnake(result.getSnake().move());
+        if (isLevelPassed())
+        {
+            return result.nextLevel();
+        }
+        else
+        {
+            result = processAtMostOneInputEventOn(result);
+            return result.withSnake(result.getSnake().move());
+        }
     }
-    
+
+    public boolean isLevelPassed()
+    {
+        return getApplesRemaining() < 1;
+    }
+
+    public GameState nextLevel()
+    {
+        System.out.println("Levels are not implemented yet.");
+        System.exit(0);
+        return this;
+    }
+
+    public GameState processAtMostOneInputEventOn(GameState state)
+    {
+        return inputQueue.isEmpty() ? state : inputQueue.remove().applyHandler(state);
+    }
+
+    public GameState processEntireCurrentGameEventQueueOn(GameState state)
+    {
+        state = gameEventQueue.stream().reduce((f1, f2) -> f1.andThen(f2)).orElse(x -> x).apply(state);
+        gameEventQueue.clear();
+        return state;
+    }
+
     /**
      * Potentially creates a new {@link GameState} with the given {@link Score}.
      * @param newScore The new {@link Score}.
@@ -378,11 +426,10 @@ public class GameState implements IoEngine.Drawable
      * Sends an input event to the input queue to be handled by the game logic.
      * @param event The {@link GameInputEvent} to queue.
      */
-    public GameState queueInputEvent(GameInputEvent event)
+    public void queueInputEvent(GameInputEvent event)
     {
-        if (GameInputEvent.doesNothing(event)) { return this; }
+        if (GameInputEvent.doesNothing(event)) { return; }
         inputQueue.add(event);
-        return this;
     }
     
     /**
@@ -390,13 +437,12 @@ public class GameState implements IoEngine.Drawable
      * @param event
      * @return
      */
-    public GameState queueGameEvent(Function<? super GameState, ? extends GameState> event)
+    public void queueGameEvent(Function<? super GameState, ? extends GameState> event)
     {
         Function<? super GameState, ? extends GameState>
             onlyHandleTheEventIfTheGameIsNotInATerminalState =
                 gs -> gs.isTerminalState() ? gs : event.apply(gs);
         gameEventQueue.add(onlyHandleTheEventIfTheGameIsNotInATerminalState);
-        return this;
     }
 
     /**
@@ -416,6 +462,10 @@ public class GameState implements IoEngine.Drawable
         private Snake snake;
         /** The score for the current state. */
         private Score score;
+        /** */
+        private int level;
+        /** */
+        private int applesRemaining;
         /** The input queue for the entire game.  It gets passed from state to state. */
         private Queue<GameInputEvent> inputQueue;
         /** The queue for other game events that modify mutable state. It gets passed from state to state.*/
@@ -428,6 +478,7 @@ public class GameState implements IoEngine.Drawable
         private String littleGameOverMessage;
 
         private Builder(GameBoard board, Snake snake, Score score,
+                int level, int applesRemaining,
                 Queue<GameInputEvent> inputQueue,
                 Queue<Function<? super GameState, ? extends GameState>> gameEventQueue,
                 boolean done, boolean paused,
@@ -436,6 +487,8 @@ public class GameState implements IoEngine.Drawable
             this.board = board;
             this.snake = snake;
             this.score = score;
+            this.level = level;
+            this.applesRemaining = applesRemaining;
             this.inputQueue = inputQueue;
             this.gameEventQueue = gameEventQueue;
             this.done = done;
@@ -446,6 +499,7 @@ public class GameState implements IoEngine.Drawable
         private Builder()
         {
             this(null, null, null,
+                1, Shared.Settings.Game.applesPerLevel,
                 null,
                 null,
                 false, false,
@@ -455,17 +509,20 @@ public class GameState implements IoEngine.Drawable
         private Builder(GameState gs)
         {
             this(gs.board, gs.snake, gs.score,
+                gs.level, gs.applesRemaining,
                 gs.inputQueue,
                 gs.gameEventQueue,
                 gs.done, gs.paused,
                 gs.littleGameOverMessage);
         }
 
-        public Builder boardAs(GameBoard board) { this.board  = board;  return this; }
-        public Builder snakeAs(Snake snake)     { this.snake  = snake;  return this; }
-        public Builder scoreAs(Score score)     { this.score  = score;  return this; }
-        public Builder doneAs(boolean done)     { this.done   = done;   return this; }
-        public Builder pausedAs(boolean paused) { this.paused = paused; return this; }
+        public Builder boardAs(GameBoard board)               { this.board           = board;           return this; }
+        public Builder snakeAs(Snake snake)                   { this.snake           = snake;           return this; }
+        public Builder scoreAs(Score score)                   { this.score           = score;           return this; }
+        public Builder levelAs(int level)                     { this.level           = level;           return this; }
+        public Builder applesRemainingAs(int applesRemaining) { this.applesRemaining = applesRemaining; return this; }
+        public Builder doneAs(boolean done)                   { this.done            = done;            return this; }
+        public Builder pausedAs(boolean paused)               { this.paused          = paused;          return this; }
         
         public Builder boardAs(Function<? super GameBoard, ? extends GameBoard> f)
         {
@@ -479,6 +536,14 @@ public class GameState implements IoEngine.Drawable
         public Builder scoreAs(Function<? super Score, ? extends Score> f)
         {
             return scoreAs(f.apply(this.score));
+        }
+        public Builder levelAs(IntUnaryOperator f)
+        {
+            return levelAs(f.applyAsInt(this.level));
+        }
+        public Builder applesRemainingAs(IntUnaryOperator f)
+        {
+            return applesRemainingAs(f.applyAsInt(this.applesRemaining));
         }
         public Builder doneAs(Predicate<Boolean> f)
         {

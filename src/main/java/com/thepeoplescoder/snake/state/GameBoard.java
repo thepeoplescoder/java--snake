@@ -1,6 +1,5 @@
 package com.thepeoplescoder.snake.state;
 
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -16,10 +15,10 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import com.thepeoplescoder.snake.math.IntVector2;
 import com.thepeoplescoder.snake.Shared;
 import com.thepeoplescoder.snake.cell.Cell;
 import com.thepeoplescoder.snake.cell.Wall;
+import com.thepeoplescoder.snake.math.IntVector2;
 import com.thepeoplescoder.snake.view.IoEngine;
 
 /**
@@ -48,9 +47,14 @@ public class GameBoard implements IoEngine.Drawable
     {
         this.size = Objects.requireNonNull(size, "size cannot be null.");
         Objects.requireNonNull(wallPositions, "wallPositions cannot be null.")
-            .stream().forEach(position -> put(new Wall(position)));
+            .stream().forEach(position -> putCell(new Wall(position)));
     }
-    
+
+    /**
+     * 
+     * @param size
+     * @return
+     */
     public static Set<IntVector2> boundingWalls(IntVector2 size)
     {
         Set<IntVector2> walls = new HashSet<>();
@@ -104,33 +108,60 @@ public class GameBoard implements IoEngine.Drawable
     }
     
     /**
-     * @return A random y position within the bounds of this {@link GameBoard[
+     * @return A random y position within the bounds of this {@link GameBoard}.
+     * @see java.util.Random#nextInt(int)
+     * @see #getHeight()
      */
     public int getRandomY()
     {
         return GameBoard.random.nextInt(getHeight());
     }
-    
+
+    /**
+     * @return A random {@link IntVector2} within the bounds of this {@link GameBoard}.
+     */
     public IntVector2 getRandomVector()
     {
         return IntVector2.of(getRandomX(), getRandomY());
     }
-    
+
+    /**
+     * Is this X value in bounds?
+     * @param x The x value to check.
+     * @return {@code true} if it is, otherwise {@code false}.
+     */
     private boolean _isInBoundsX(int x)
     {
         return 0 <= x && x < getWidth();
     }
-    
+
+    /**
+     * Is this Y value in bounds?
+     * @param y The y value to check.
+     * @return {@code true} if it is, otherwise {@code false}.
+     */
     private boolean _isInBoundsY(int y)
     {
         return 0 <= y && y < getHeight();
     }
-    
+
+    /**
+     * Is this position in bounds?
+     * @param pos The position to check, as an {@link IntVector2}.
+     * @return {@code true} if it is, otherwise {@code false}.
+     */
     public boolean isInBounds(IntVector2 pos)
     {
         return _isInBoundsX(pos.getX()) && _isInBoundsY(pos.getY());
     }
-    
+
+    /**
+     * Throws an exception if the coordinates are out of bounds.
+     * @param x The x coordinate to check.
+     * @param y The y coordinate to check.
+     * @return If the coordinates are in bounds, this {@link GameBoard}.
+     * @throws IndexOutOfBoundsException
+     */
     private GameBoard _thisOrThrowIfOutOfBounds(int x, int y)
     {
         if (!_isInBoundsX(x))
@@ -143,25 +174,26 @@ public class GameBoard implements IoEngine.Drawable
         }
         return this;
     }
-    
+
+    /**
+     * Throws an exception if the coordinates are out of bounds.
+     * @param pos The position to check, as an {@link IntVector2}.
+     * @return If the coordinates are in bounds, this {@link GameBoard}.
+     * @throws IndexOutOfBoundsException
+     */
     private GameBoard _thisOrThrowIfOutOfBounds(IntVector2 pos)
     {
         Objects.requireNonNull(pos, "position vector cannot be null.");
         return _thisOrThrowIfOutOfBounds(pos.getX(), pos.getY());
     }
-    
-    public void put(Cell cell)
+
+    /**
+     * Puts the given cell on this {@link GameBoard}.
+     * @param cell The {@link Cell} to put on the board.
+     */
+    public void putCell(Cell cell)
     {
-        setCell(cell.getPosition(), cell);
-    }
-    
-    public Cell getCell(IntVector2 pos)
-    {
-        return _thisOrThrowIfOutOfBounds(pos).cells.getOrDefault(pos, Cell.EMPTY);
-    }
-    
-    public void setCell(IntVector2 pos, Cell cell)
-    {
+        final IntVector2 pos = cell.getPosition();
         if (cell != Cell.EMPTY)
         {
             _thisOrThrowIfOutOfBounds(pos).cells.put(pos, cell);
@@ -171,20 +203,36 @@ public class GameBoard implements IoEngine.Drawable
             removeCell(pos);
         }
     }
-    
+
+    /**
+     * Gets the requested cell from the board.
+     * @param pos The board position, as an {@link IntVector2}.
+     * @return The {@link Cell} at the requested position.
+     * @throws IndexOutOfBoundsException
+     */
+    public Cell getCell(IntVector2 pos)
+    {
+        return _thisOrThrowIfOutOfBounds(pos).cells.getOrDefault(pos, Cell.EMPTY);
+    }
+
+    /**
+     * Removes the cell from the board at the requested position.
+     * @param pos The board position, as an {@link IntVector2}.
+     */
     public void removeCell(IntVector2 pos)
     {
         _thisOrThrowIfOutOfBounds(pos).cells.remove(pos);
     }
-    
+
+    /**
+     * Gets the requested cell from the {@link GameBoard}.
+     * @param x The X coordinate.
+     * @param y The Y coordinate.
+     * @return The {@link Cell} at the requested position.
+     */
     public Cell getCell(int x, int y)
     {
         return getCell(IntVector2.of(x, y));
-    }
-    
-    public void setCell(int x, int y, Cell cell)
-    {
-        setCell(IntVector2.of(x, y), cell);
     }
     
     public void removeCell(int x, int y)
@@ -192,14 +240,14 @@ public class GameBoard implements IoEngine.Drawable
         removeCell(IntVector2.of(x, y));
     }
     
-    public boolean isWall(IntVector2 pos)
-    {
-        return getCell(pos) instanceof Wall;
-    }
-    
     public boolean isWall(int x, int y)
     {
         return isWall(IntVector2.of(x, y));
+    }
+    
+    public boolean isWall(IntVector2 pos)
+    {
+        return getCell(pos) instanceof Wall;
     }
     
     public void draw(IoEngine io)
@@ -211,7 +259,13 @@ public class GameBoard implements IoEngine.Drawable
     {
         return isInBounds(pos) && getCell(pos) == Cell.EMPTY;
     }
-    
+
+    /**
+     * Creates an initial snake for the board.
+     * The {@link Snake} returned is guaranteed to be positioned and moving
+     * in a direction such that it won't immediately crash into an obstacle.
+     * @return The initial {@link Snake}.
+     */
     public Snake babySnake()
     {
         // Used to generate snake tails.
