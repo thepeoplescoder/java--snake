@@ -9,18 +9,17 @@ import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.function.IntFunction;
 import java.util.function.IntUnaryOperator;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import com.thepeoplescoder.snake.math.IntVector2;
 import com.thepeoplescoder.snake.Shared;
 import com.thepeoplescoder.snake.cell.Apple;
 import com.thepeoplescoder.snake.cell.Cell;
 import com.thepeoplescoder.snake.input.GameInputEvent;
+import com.thepeoplescoder.snake.math.IntVector2;
 import com.thepeoplescoder.snake.view.IoEngine;
 
 /**
