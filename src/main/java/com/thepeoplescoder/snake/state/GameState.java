@@ -67,9 +67,9 @@ public class GameState implements IoEngine.Drawable
     private final String littleGameOverMessage;
 
     /** The input queue for the entire game.  It gets passed from state to state. */
-    private final Queue<GameInputEvent> inputQueue;
+    private final Queue<GameInputEvent> sharedInputQueue;
     /** The queue for other game events that modify mutable state. It gets passed from state to state.*/
-    private final Queue<Function<? super GameState, ? extends GameState>> gameEventQueue;
+    private final Queue<Function<? super GameState, ? extends GameState>> sharedGameEventQueue;
 
     /**
      * General constructor for a {@code GameState}.
@@ -80,8 +80,8 @@ public class GameState implements IoEngine.Drawable
      *              state object to state object.
      * @param snake The {@link Snake} instance represented by this state.
      * @param score The {@link Score} instance represented by this state.
-     * @param inputQueue The input {@link Queue}.  This object gets passed to the next state.
-     * @param gameEventQueue The game event {@link Queue} consisting of {@link Runnable}s that should take place when changing state.
+     * @param sharedInputQueue The input {@link Queue}.  This object gets passed to the next state.
+     * @param sharedGameEventQueue The game event {@link Queue} consisting of {@link Runnable}s that should take place when changing state.
      */
     private GameState(GameState.Builder gsb)
     {
@@ -97,8 +97,8 @@ public class GameState implements IoEngine.Drawable
         this.score                 = Objects.requireNonNull(gsb.score, "score cannot be null.");
         this.level                 = gsb.level;
         this.applesRemaining       = gsb.applesRemaining;
-        this.inputQueue            = gsb.inputQueue;
-        this.gameEventQueue        = gsb.gameEventQueue;
+        this.sharedInputQueue            = gsb.inputQueue;
+        this.sharedGameEventQueue        = gsb.gameEventQueue;
         this.littleGameOverMessage = gsb.littleGameOverMessage;
     }
     
@@ -329,21 +329,18 @@ public class GameState implements IoEngine.Drawable
      */
     public GameState nextState()
     {
-        // Handle the current interaction event.
         GameState result = getNewStateFromSnakeTouchingCurrentCell();
 
-        // Process the current game event queue in its entirety.
         result = processEntireCurrentGameEventQueueOn(result);
 
         if (isLevelPassed())
         {
             return result.nextLevel();
         }
-        else
-        {
-            result = processAtMostOneInputEventOn(result);
-            return result.withSnake(result.getSnake().move());
-        }
+
+        result = processAtMostOneInputEventOn(result);
+
+        return result.withSnake(result.getSnake().move());
     }
 
     public boolean isLevelPassed()
@@ -360,13 +357,13 @@ public class GameState implements IoEngine.Drawable
 
     public GameState processAtMostOneInputEventOn(GameState state)
     {
-        return inputQueue.isEmpty() ? state : inputQueue.remove().applyHandler(state);
+        return sharedInputQueue.isEmpty() ? state : sharedInputQueue.remove().applyHandler(state);
     }
 
     public GameState processEntireCurrentGameEventQueueOn(GameState state)
     {
-        state = gameEventQueue.stream().reduce((f1, f2) -> f1.andThen(f2)).orElse(x -> x).apply(state);
-        gameEventQueue.clear();
+        state = sharedGameEventQueue.stream().reduce((f1, f2) -> f1.andThen(f2)).orElse(x -> x).apply(state);
+        sharedGameEventQueue.clear();
         return state;
     }
 
@@ -428,7 +425,7 @@ public class GameState implements IoEngine.Drawable
     public void queueInputEvent(GameInputEvent event)
     {
         if (GameInputEvent.doesNothing(event)) { return; }
-        inputQueue.add(event);
+        sharedInputQueue.add(event);
     }
     
     /**
@@ -441,7 +438,7 @@ public class GameState implements IoEngine.Drawable
         Function<? super GameState, ? extends GameState>
             onlyHandleTheEventIfTheGameIsNotInATerminalState =
                 gs -> gs.isTerminalState() ? gs : event.apply(gs);
-        gameEventQueue.add(onlyHandleTheEventIfTheGameIsNotInATerminalState);
+        sharedGameEventQueue.add(onlyHandleTheEventIfTheGameIsNotInATerminalState);
     }
 
     /**
@@ -509,8 +506,8 @@ public class GameState implements IoEngine.Drawable
         {
             this(gs.board, gs.snake, gs.score,
                 gs.level, gs.applesRemaining,
-                gs.inputQueue,
-                gs.gameEventQueue,
+                gs.sharedInputQueue,
+                gs.sharedGameEventQueue,
                 gs.done, gs.paused,
                 gs.littleGameOverMessage);
         }
