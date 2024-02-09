@@ -115,7 +115,7 @@ public class Snake implements IoEngine.Drawable, GameState.Movable
      */
     public Snake withDirection(IntVector2 direction)
     {
-        return isValidMove(direction) ? new Snake(direction, head, tail, growthStepsRemaining) : this;
+        return isValidDirection(direction) ? new Snake(direction, head, tail, growthStepsRemaining) : this;
     }
     
     /**
@@ -142,7 +142,7 @@ public class Snake implements IoEngine.Drawable, GameState.Movable
      * @param newDirection The direction to check.
      * @return {@code true} if changing the direction to {@code newDirection} makes sense, {@code false} otherwise.
      */
-    public boolean isValidMove(IntVector2 newDirection)
+    public boolean isValidDirection(IntVector2 newDirection)
     {
         return getDirection().isPerpendicularTo(newDirection);
     }
