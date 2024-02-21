@@ -23,7 +23,7 @@ public class Shared
             public static final int initialSafetySpaces = 10;
             public static final int delayMillis = 100;
             public static final int growthStepsPerApple = 5;
-            public static final int applesPerLevel = 5;
+            public static final int applesPerLevel = 999;
             public static class Board
             {
                 public static final int width = 40;
