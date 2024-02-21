@@ -80,6 +80,12 @@ public class Shared
     public static class Messages
     {
         public static final String gameOver = "Game Over!";
+
+        /**
+         * Some insulting game over messages.
+         * I was playing a bit of Risk of Rain 2 when I wrote this,
+         * so some of the messages are inspired by it. 😂🤣
+         */
         public static final String[] littleGameOver = new String[] {
             "haha u suck",
             "lol get rekt",
