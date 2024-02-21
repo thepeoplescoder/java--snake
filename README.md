@@ -2,6 +2,8 @@
 
 A basic implementation of Snake in Java.
 
+![Snake Screenshot 01](./screenshots/snake-gameplay-01.png)
+
 ## Why Write It?
 
 I wrote this around July of 2023 while preparing to
@@ -111,6 +113,8 @@ After [building](#how-to-build), you can run the app:
     [Risk of Rain 2](https://riskofrain.com) at the time.
     Their game over messages do the same, so I drew inspiration
     from it.
+* Body is deliberately slightly darker than head
+  so direction of travel is clear
 * Internally, the game is structured such that the
   game logic is separate from how it is displayed
   to the user.
