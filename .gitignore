@@ -1,6 +1,2 @@
-*
-!src/
-!.gitignore
-!pom.xml
-!README.md
-!LICENSE
+.vscode/
+target/
